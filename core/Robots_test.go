@@ -38,6 +38,24 @@ func TestBuild(t *testing.T) {
 	}
 }
 
+func TestBebitusBuild(t *testing.T) {
+	robot := NewRobot()
+
+	robot.Build("https://www.bebitus.pt", "TestBot")
+
+	if !robot.IsAllowed("https://www.bebitus.pt/un-conte-de-fil") {
+		t.Fatalf("%s should be allowed in here", "https://www.bebitus.pt/un-conte-de-fil")
+	}
+
+	if robot.IsAllowed("https://www.bebitus.pt/search/?rs=true&q=herzlisten:%22PromoCole%22&&icn=BEB_PT_20200817_PTbacktoschool_index&ici=onpage_banner_brandcorner_backtoschoolpromo") {
+		t.Fatalf("%s shouldn't be allowed in here", "http://www.bebitus.pt/search/?rs=true&q=herzlisten:%22PromoCole%22&&icn=BEB_PT_20200817_PTbacktoschool_index&ici=onpage_banner_brandcorner_backtoschoolpromo")
+	}
+
+	if robot.IsAllowed("http://www.bebitus.pt/search/?rs=true&q=herzlisten:%22PromoCole%22&&icn=BEB_PT_20200817_PTbacktoschool_index&ici=onpage_banner_brandcorner_backtoschoolpromo") {
+		t.Fatalf("%s shouldn't be allowed in here", "http://www.bebitus.pt/search/?rs=true&q=herzlisten:%22PromoCole%22&&icn=BEB_PT_20200817_PTbacktoschool_index&ici=onpage_banner_brandcorner_backtoschoolpromo")
+	}
+}
+
 func TestNoRobots(t *testing.T) {
 	robot := NewRobot()
 
@@ -144,12 +162,11 @@ func TestSetCrawlerDelay(t *testing.T) {
 
 	robot.setCrawlDelay("TestBot", "10")
 
-	delay := robot.getCrawlDelay("TestBot")
+	delay := robot.getCrawlDelayByUserAgent("TestBot")
 
-	if delay != time.Duration(10 * float64(time.Second)) {
-		t.Fatalf("%s != %s", delay, time.Duration(10 * float64(time.Second)))
+	if delay != time.Duration(10*float64(time.Second)) {
+		t.Fatalf("%s != %s", delay, time.Duration(10*float64(time.Second)))
 	}
-
 }
 
 func TestAddSitemap(t *testing.T) {

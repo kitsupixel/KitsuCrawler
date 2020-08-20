@@ -81,8 +81,14 @@ func (robot *Robots) IsAllowed(path string) bool {
 		}
 	}
 
-	if strings.HasPrefix(path, robot.domain.String()) {
-		path = strings.Replace(path, robot.domain.String(), "", 1)
+	if strings.HasPrefix(path, "https://") {
+		path = strings.Replace(path, "https://", "http://", 1)
+	}
+
+	domain := strings.Replace(robot.domain.String(), "https://", "http://", 1)
+
+	if strings.HasPrefix(path, domain) {
+		path = strings.Replace(path, domain, "", 1)
 	}
 
 	var result = true
@@ -209,7 +215,11 @@ func (robot *Robots) setCrawlDelay(userAgent string, crawlDelay string) error {
 	return nil
 }
 
-func (robot *Robots) getCrawlDelay(userAgent string) time.Duration {
+func (robot *Robots) getCrawlDelay() time.Duration {
+	return robot.getCrawlDelayByUserAgent(robot.userAgent)
+}
+
+func (robot *Robots) getCrawlDelayByUserAgent(userAgent string) time.Duration {
 	group := robot.getGroup(userAgent)
 	return group.crawlDelay
 }
@@ -250,5 +260,3 @@ func replaceSuffix(str, suffix, replacement string) string {
 
 	return str
 }
-
-
