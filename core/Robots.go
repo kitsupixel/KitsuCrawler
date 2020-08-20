@@ -10,43 +10,46 @@ import (
 	"time"
 )
 
-type Rule struct {
+type rule struct {
 	isAllowed bool
 	path      string
 	pattern   *regexp.Regexp
 }
 
-type Group struct {
+type group struct {
 	userAgent  string
-	rules      []*Rule
+	rules      []*rule
 	crawlDelay time.Duration
 }
 
+// Robots is a datastructure that contains the Robots.txt information
 type Robots struct {
 	domain    *url.URL
-	groups    map[string]*Group
+	groups    map[string]*group
 	sitemaps  []string
 	host      string
 	userAgent string
 }
 
-type InvalidHostError struct{}
+type invalidHostError struct{}
 
-func (e InvalidHostError) Error() string {
+func (e invalidHostError) Error() string {
 	return "URL is not valid for this robots.txt file"
 }
 
+// NewRobot create a default Robot object
 func NewRobot() *Robots {
 	return &Robots{
-		groups: make(map[string]*Group),
+		groups: make(map[string]*group),
 	}
 }
 
+// Build gets the robots.txt file and stores it's information on the Robot object
 func (robot *Robots) Build(domain string, userAgent string) error {
 	// Check if domain is a valid URL
 	u, err := url.Parse(domain)
 	if err != nil || u.Scheme == "" || u.Host == "" {
-		return &InvalidHostError{}
+		return &invalidHostError{}
 	}
 
 	robot.domain = u
@@ -55,7 +58,10 @@ func (robot *Robots) Build(domain string, userAgent string) error {
 	robot.userAgent = userAgent
 
 	// Gets the content of the robots.txt file
-	resp, _ := http.Get(domain + "/robots.txt")
+	resp, err := http.Get(domain + "/robots.txt")
+	if err != nil {
+		return nil
+	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
@@ -71,6 +77,7 @@ func (robot *Robots) Build(domain string, userAgent string) error {
 	return nil
 }
 
+// IsAllowed returns if the current path is visitable by the current User Agent
 func (robot *Robots) IsAllowed(path string) bool {
 	group := robot.getGroup(robot.userAgent)
 	if group.rules == nil {
@@ -150,18 +157,18 @@ func (robot *Robots) parse(content string) {
 	}
 }
 
-func (robot *Robots) getGroup(userAgent string) *Group {
+func (robot *Robots) getGroup(userAgent string) *group {
 	userAgent = strings.ToLower(userAgent)
 
-	group, ok := robot.groups[userAgent]
+	g, ok := robot.groups[userAgent]
 
 	// Doesn't exist let's add it
 	if !ok {
-		group = &Group{userAgent: userAgent}
-		robot.groups[userAgent] = group
+		g = &group{userAgent: userAgent}
+		robot.groups[userAgent] = g
 	}
 
-	return group
+	return g
 }
 
 func (robot *Robots) addRule(userAgent string, path string, isAllowed bool) error {
@@ -186,13 +193,13 @@ func (robot *Robots) addRule(userAgent string, path string, isAllowed bool) erro
 			return err
 		}
 
-		group.rules = append(group.rules, &Rule{
+		group.rules = append(group.rules, &rule{
 			isAllowed: isAllowed,
 			path:      path,
 			pattern:   regexPattern,
 		})
 	} else {
-		group.rules = append(group.rules, &Rule{
+		group.rules = append(group.rules, &rule{
 			isAllowed: isAllowed,
 			path:      path,
 			pattern:   nil,
@@ -228,7 +235,7 @@ func (robot *Robots) addSitemap(urlStr string) error {
 	u, err := url.Parse(urlStr)
 	// To validate the url
 	if err != nil || u.Scheme == "" || u.Host == "" {
-		return &InvalidHostError{}
+		return &invalidHostError{}
 	}
 
 	robot.sitemaps = append(robot.sitemaps, urlStr)

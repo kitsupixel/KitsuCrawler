@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"github.com/gocolly/colly/v2"
 	"io/ioutil"
 	"log"
 	"net/url"
@@ -10,29 +9,33 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/gocolly/colly/v2"
 )
 
+// Crawler provides a datastucture with settings and methods to crawl a website
 type Crawler struct {
 	domain        *url.URL
 	MaxDepthLevel int
-	ignoreRobots  bool
+	IgnoreRobots  bool
 	robots        *Robots
 	userAgent     string
 }
 
-type InvalidURLError struct{}
+type invalidURLError struct{}
 
-func (e InvalidURLError) Error() string {
+func (e invalidURLError) Error() string {
 	return "URL is not valid"
 }
 
+// NewCrawler creates a default Crawler object
 func NewCrawler(domain string, userAgent string) (*Crawler, error) {
 
 	domain = strings.TrimRight(domain, "/")
 
 	u, err := url.Parse(domain)
 	if err != nil || u.Scheme == "" || u.Host == "" {
-		return nil, &InvalidURLError{}
+		return nil, &invalidURLError{}
 	}
 
 	robot := NewRobot()
@@ -41,12 +44,13 @@ func NewCrawler(domain string, userAgent string) (*Crawler, error) {
 	return &Crawler{
 		domain:        u,
 		MaxDepthLevel: 5,
-		ignoreRobots:  false,
+		IgnoreRobots:  false,
 		robots:        robot,
 		userAgent:     userAgent,
 	}, nil
 }
 
+// Start initiliazes the crawl of the domain
 func (crawler *Crawler) Start() {
 	domain, domainName := getDomain(crawler.domain)
 
@@ -57,7 +61,7 @@ func (crawler *Crawler) Start() {
 	)
 
 	randomDelay := 0 * time.Second
-	if !crawler.ignoreRobots {
+	if !crawler.IgnoreRobots {
 		randomDelay = crawler.robots.getCrawlDelay()
 	}
 
@@ -88,7 +92,7 @@ func (crawler *Crawler) Start() {
 			isFile = true
 		}
 
-		if !isFile && (!crawler.ignoreRobots && crawler.robots.IsAllowed(link)) &&
+		if !isFile && (!crawler.IgnoreRobots && crawler.robots.IsAllowed(link)) &&
 			strings.Contains(link, domain) && strings.HasPrefix(link, "http") {
 			// Valid link to crawl
 			_, err := f.WriteString(link + "\n")
@@ -111,7 +115,7 @@ func (crawler *Crawler) Start() {
 	c.Wait()
 
 	fmt.Print("\nRemoving duplicate links from file...")
-	RemoveDuplicatesFromFile(fileName)
+	removeDuplicatesFromFile(fileName)
 	fmt.Print("Done!")
 }
 
@@ -135,7 +139,7 @@ func getDomain(u *url.URL) (string, string) {
 	return domain, domainName
 }
 
-func RemoveDuplicatesFromFile(filePath string) {
+func removeDuplicatesFromFile(filePath string) {
 	// read the lines
 	line, _ := ioutil.ReadFile(filePath)
 	// turn the byte slice into string format
@@ -143,7 +147,7 @@ func RemoveDuplicatesFromFile(filePath string) {
 	// split the lines by a space, can also change this
 	lines := strings.Split(strLine, "\n")
 	// remove the duplicates from lines slice (from func we created)
-	RemoveDuplicates(&lines)
+	removeDuplicates(&lines)
 	// get the actual file
 	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0600)
 	// err check
@@ -163,7 +167,7 @@ func RemoveDuplicatesFromFile(filePath string) {
 	f.Close()
 }
 
-func RemoveDuplicates(lines *[]string) {
+func removeDuplicates(lines *[]string) {
 	found := make(map[string]bool)
 	j := 0
 	for i, x := range *lines {
