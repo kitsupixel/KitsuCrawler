@@ -106,12 +106,14 @@ func (crawler *Crawler) Start() {
 	})
 
 	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("\nVisiting", r.URL)
+		fmt.Println("Visiting", r.URL)
 	})
 
 	c.Visit(crawler.domain.String())
 	// Wait until threads are finished
 	c.Wait()
+
+	f.Close()
 
 	fmt.Print("\nRemoving duplicate links from file...")
 	removeDuplicatesFromFile(fileName)
@@ -123,12 +125,21 @@ func getDomain(u *url.URL) (string, string) {
 	domainName := ""
 
 	parts := strings.Split(u.Host, ".")
+
+	// Removes "www"
+	if parts[0] == "www" {
+		parts = parts[1:]
+	}
+
 	numberOfParts := len(parts)
 
 	if numberOfParts >= 2 {
-		if numberOfParts == 4 || (numberOfParts == 3 && len(parts[numberOfParts-2]) <= 3) {
+		if numberOfParts == 3 {
 			domain = parts[numberOfParts-3] + "." + parts[numberOfParts-2] + "." + parts[numberOfParts-1]
-			domainName = parts[numberOfParts-3]
+			domainName = parts[numberOfParts-3] + "." + parts[numberOfParts-2]
+			if numberOfParts == 3 && len(parts[numberOfParts-2]) <= 3 {
+				domainName = parts[numberOfParts-3]
+			}
 		} else {
 			domain = parts[numberOfParts-2] + "." + parts[numberOfParts-1]
 			domainName = parts[numberOfParts-2]
