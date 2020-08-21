@@ -1,7 +1,7 @@
 package main
 
 import (
-	"KitsuCrawler/core"
+	"KitsuCrawler/crawler"
 	"fmt"
 	"time"
 )
@@ -12,12 +12,12 @@ func main() {
 	userAgent := "KitsuBot"
 	websiteToCrawl := "https://www.mbit.pt"
 
-	crawler, err := core.NewCrawler(websiteToCrawl, userAgent)
+	c, err := crawler.NewCrawler(websiteToCrawl, userAgent)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	crawler.Start()
+	c.Start()
 
 	elapsed := time.Since(start)
 

@@ -1,4 +1,4 @@
-package core
+package crawler
 
 import (
 	"fmt"
@@ -82,7 +82,6 @@ func (crawler *Crawler) Start() {
 
 	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		link := e.Request.AbsoluteURL(e.Attr("href"))
-		fmt.Print(".")
 
 		link = strings.TrimRight(link, "/")
 
